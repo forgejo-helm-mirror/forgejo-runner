@@ -185,7 +185,7 @@ kubectl:
     registry: docker.io
     repository: alpine/kubectl
     pullPolicy: IfNotPresent
-    tag: 1.35.3
+    tag: 1.35.4@sha256:9ccd823647622b620dce092d0f1406b8b41d152ce08ac963e3d4683770b14dfd
 
 serviceAccount:
   # Specifies whether a service account should be created
