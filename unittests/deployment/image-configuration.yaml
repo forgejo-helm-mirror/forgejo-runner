@@ -1,0 +1,82 @@
+---
+suite: deployment template (image configuration)
+release:
+  name: forgejo-runner-unittests
+  namespace: testing
+chart:
+  # Override appVersion to be consistent with used digest :)
+  appVersion: 12.7.3
+templates: [templates/deployment.yaml]
+tests:
+  - it: default values
+    template: templates/deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: code.forgejo.org/forgejo/runner:12.7.3
+  - it: tag override
+    template: templates/deployment.yaml
+    set:
+      image.tag: 12.7.4
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: code.forgejo.org/forgejo/runner:12.7.4
+  - it: scoped registry
+    template: templates/deployment.yaml
+    set:
+      image.registry: example.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: example.com/forgejo/runner:12.7.3
+  - it: global registry
+    template: templates/deployment.yaml
+    set:
+      global.image.registry: global.example.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: global.example.com/forgejo/runner:12.7.3
+  - it: image fullOverride
+    template: templates/deployment.yaml
+    set:
+      image:
+        fullOverride: forgejo.org/forgejo/runner:12.7.3
+        # setting registry, repository, tag, and digest to prove that override works
+        registry: example.com
+        repository: example/image
+        tag: 1.0.0
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: forgejo.org/forgejo/runner:12.7.3
+  - it: digest for image
+    template: templates/deployment.yaml
+    set:
+      image:
+        digest: sha256:b28e8f3089b52ebe6693295df142f8c12eff354e9a4a5bfbb5c10f296c3a537a
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: code.forgejo.org/forgejo/runner:12.7.3@sha256:b28e8f3089b52ebe6693295df142f8c12eff354e9a4a5bfbb5c10f296c3a537a
+  - it: digest and global registry
+    template: templates/deployment.yaml
+    set:
+      global.image.registry: global.example.com
+      image.digest: sha256:b28e8f3089b52ebe6693295df142f8c12eff354e9a4a5bfbb5c10f296c3a537a
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: global.example.com/forgejo/runner:12.7.3@sha256:b28e8f3089b52ebe6693295df142f8c12eff354e9a4a5bfbb5c10f296c3a537a
+  - it: correctly renders floating tag references
+    template: templates/deployment.yaml
+    set:
+      image.tag: 1.21
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: code.forgejo.org/forgejo/runner:1.21
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: code.forgejo.org/forgejo/runner:1.21

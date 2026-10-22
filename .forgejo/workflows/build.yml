@@ -1,0 +1,108 @@
+name: build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - maint/**
+    tags:
+      - v*
+  workflow_dispatch:
+
+env:
+  HELM_VERSION: v4.2.3 # renovate: datasource=github-releases depName=helm packageName=helm/helm
+  HELM_UNITTEST_VERSION: v1.1.2 # renovate: datasource=github-releases depName=helm-unittest packageName=helm-unittest/helm-unittest
+  HELM_CHART_TESTING_VERSION: v3.14.0 # renovate: datasource=github-releases depName=chart-testing packageName=helm/chart-testing
+  KUBECTL_VERSION: v1.36.3 # renovate: datasource=github-releases depName=kubectl packageName=kubernetes/kubernetes
+  CT_GITHUB_GROUPS: true
+
+jobs:
+  lint-helm:
+    runs-on: docker
+    steps:
+      - run: cat /etc/os-release
+
+      - run: ps axf
+
+      - uses: https://data.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          show-progress: false
+          fetch-depth: 0
+          filter: blob:none # We don't need all blobs
+
+      - uses: ./.forgejo/actions/setup
+
+      - name: install chart-testing
+        uses: https://data.forgejo.org/helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+        with:
+          version: ${{ env.HELM_CHART_TESTING_VERSION }}
+
+      - name: install helm
+        uses: https://data.forgejo.org/azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: install helm-unittest
+        run: helm plugin install --verify=false --version ${{ env.HELM_UNITTEST_VERSION }} https://github.com/helm-unittest/helm-unittest
+
+      - run: helm dependency build
+
+      - run: yamllint -f colored .
+      - run: helm lint .
+      - run: helm template --debug forgejo-runner .
+      - run: make unittests
+      - run: ct lint --config tools/ct.yml --charts .
+
+  # Catch-all required check for test matrix
+  test-success:
+    needs:
+      - lint-helm
+    runs-on: docker
+    timeout-minutes: 1
+    if: always()
+    steps:
+      - name: Fail for failed or cancelled lint-helm
+        if: |
+          needs.lint-helm.result == 'failure' ||
+          needs.lint-helm.result == 'cancelled'
+        run: exit 1
+
+  publish:
+    runs-on: docker
+    needs:
+      - test-success
+
+    if: ${{ github.ref_type == 'tag' }}
+
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          show-progress: false
+          fetch-depth: 0 # Important for changelog
+          filter: blob:none # We don't need all blobs
+
+      - uses: ./.forgejo/actions/setup
+      - uses: ./.forgejo/actions/setup-node
+
+      - name: install helm
+        uses: https://data.forgejo.org/azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - run: helm dependency build
+      - run: helm package --version "${GITHUB_REF_NAME#v}" -d tmp/ ./
+
+      - name: login to registries
+        run: |
+          echo ${FORGEJO_TOKEN} | helm registry login -u viceice --password-stdin code.forgejo.org
+        env:
+          CODEBERG_TOKEN: ${{secrets.API_TOKEN}}
+          FORGEJO_TOKEN: ${{secrets.FORGEJO_API_TOKEN}}
+
+      - name: publish forgejo helm chart
+        run: |
+          helm push tmp/forgejo-${GITHUB_REF_NAME#v}.tgz oci://code.forgejo.org/forgejo-helm
+
+      # - name: publish forgejo release
+      #   run: pnpm forgejo:release
