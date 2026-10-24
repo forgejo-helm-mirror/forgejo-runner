@@ -31,13 +31,13 @@
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchDepNames": ["forgejo"],
+      "matchDepNames": ["forgejo-runner"],
       "matchUpdateTypes": ["patch"],
       "semanticCommitType": "fix"
     },
     {
       "matchManagers": ["custom.regex"],
-      "matchDepNames": ["forgejo"],
+      "matchDepNames": ["forgejo-runner"],
       "matchUpdateTypes": ["major", "minor"],
       "semanticCommitType": "feat"
     },
@@ -75,11 +75,11 @@
       "automerge": true
     },
     {
-      "description": "Use test scope for forgejo ci tests",
+      "description": "Use test scope for forgejo-runner ci tests",
       "matchFileNames": ["ci/*.yaml"],
-      "additionalBranchPrefix": "ci-forgejo-",
+      "additionalBranchPrefix": "ci-forgejo-runner-",
       "semanticCommitType": "ci",
-      "semanticCommitScope": "forgejo",
+      "semanticCommitScope": "forgejo-runner",
       "groupName": "experimental docker digests",
       "extends": ["schedule:daily"]
     },
