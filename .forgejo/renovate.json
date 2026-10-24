@@ -102,12 +102,12 @@
   ],
   "customManagers": [
     {
-      "description": "Update forgeo version in chart",
+      "description": "Update forgejo-runner version in chart",
       "customType": "regex",
       "managerFilePatterns": ["Chart.yaml"],
       "matchStrings": ["appVersion: (?<currentValue>.+?)\\s"],
-      "depNameTemplate": "forgejo",
-      "packageNameTemplate": "code.forgejo.org/forgejo/forgejo",
+      "depNameTemplate": "forgejo-runner",
+      "packageNameTemplate": "code.forgejo.org/forgejo/runner",
       "datasourceTemplate": "docker"
     },
     {
