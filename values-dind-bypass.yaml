@@ -1,12 +1,12 @@
 runner:
   config:
     create: true
-    existingSecret: ""
+    existingSecret: ''
     file:
       log:
-        level: "info"
+        level: 'info'
       runner:
-        file: ".runner"
+        file: '.runner'
         capacity: 1
         envs:
           A_TEST_ENV_NAME_1: null

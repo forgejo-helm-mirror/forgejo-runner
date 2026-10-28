@@ -18,6 +18,45 @@ env:
   CT_GITHUB_GROUPS: true
 
 jobs:
+  lint-node:
+    runs-on: docker
+    steps:
+      - run: cat /etc/os-release
+
+      - uses: https://data.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          show-progress: false
+          fetch-depth: 0 # Important for changelog
+          filter: blob:none # We don't need all blobs
+
+      - uses: ./.forgejo/actions/setup
+      - uses: ./.forgejo/actions/setup-node
+
+      - run: pnpm prettier
+      - run: pnpm markdownlint .
+      # - run: pnpm schema:check
+      # - run: make readme
+      # - run: git diff --exit-code --name-only README.md
+
+      - name: validate PR title
+        if: ${{ forgejo.event_name == 'pull_request' }}
+        shell: bash
+        env:
+          PR_TITLE: ${{ forgejo.event.pull_request.title }}
+        run: |
+          pattern='^(feat|fix|perf|revert|docs|style|refactor|test|build|ci|chore)(\([^)]+\))?(!)?: .+'
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            echo "Invalid PR title: '$PR_TITLE'"
+            echo "Expected Conventional Commits format: type(scope)!: subject"
+            echo "Allowed types: feat, fix, perf, revert, docs, style, refactor, test, build, ci, chore"
+            exit 1
+          fi
+
+      # - name: changelog
+      #   if: ${{ forgejo.event_name != 'pull_request' }}
+      #   run: |
+      #     pnpm changelog ${{ forgejo.ref_type == 'tag' && 'true' || '' }}
+
   lint-helm:
     runs-on: docker
     steps:
@@ -54,18 +93,78 @@ jobs:
       - run: make unittests
       - run: ct lint --config tools/ct.yml --charts .
 
+  e2e:
+    needs:
+      - lint-node
+      - lint-helm
+    runs-on: k8s
+
+    strategy:
+      matrix:
+        k3s:
+          # https://github.com/k3s-io/k3s/branches
+          # oldest supported version
+          # https://code.forgejo.org/forgejo-helm/forgejo-helm/issues/267
+          - v1.30.14+k3s2 # renovate: k3s
+          # https://github.com/k3s-io/k3s/blob/master/channel.yaml#L3-L4
+          # stable version
+          - v1.35.9+k3s1 # renovate: k3s
+          # latest version
+          - v1.36.5+k3s1 # renovate: k3s
+
+    steps:
+      - run: cat /etc/os-release
+
+      - uses: https://data.forgejo.org/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          show-progress: false
+          fetch-depth: 0
+          filter: blob:none # We don't need all blobs
+
+      - uses: ./.forgejo/actions/setup
+
+      - name: install helm
+        uses: https://data.forgejo.org/azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Install chart-testing
+        uses: https://data.forgejo.org/helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+        with:
+          version: ${{ env.HELM_CHART_TESTING_VERSION }}
+
+      - uses: ./.forgejo/actions/setup-k3s
+        with:
+          version: ${{ matrix.k3s }}
+
+      - run: kubectl get no -o wide
+
+  # TODO: add real chart test, see https://code.forgejo.org/forgejo-helm/forgejo-helm/src/branch/main/.forgejo/workflows/build.yml#L142
+
   # Catch-all required check for test matrix
   test-success:
     needs:
+      - lint-node
       - lint-helm
+      - e2e
     runs-on: docker
     timeout-minutes: 1
     if: always()
     steps:
+      - name: Fail for failed or cancelled lint-node
+        if: |
+          needs.lint-node.result == 'failure' ||
+          needs.lint-node.result == 'cancelled'
+        run: exit 1
       - name: Fail for failed or cancelled lint-helm
         if: |
           needs.lint-helm.result == 'failure' ||
           needs.lint-helm.result == 'cancelled'
+        run: exit 1
+      - name: Fail for failed or cancelled e2e
+        if: |
+          needs.e2e.result == 'failure' ||
+          needs.e2e.result == 'cancelled'
         run: exit 1
 
   publish:

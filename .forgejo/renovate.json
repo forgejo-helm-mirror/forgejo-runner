@@ -21,7 +21,7 @@
     },
     {
       "matchManagers": ["helmv3", "helm-values"],
-      "matchUpdateTypes": ["minor", "patch","digest"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
       "semanticCommitType": "fix"
     },
     {

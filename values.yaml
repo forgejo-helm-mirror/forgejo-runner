@@ -5,10 +5,8 @@ global:
     # -- if set it will overwrite all pullPolicy
     pullPolicy:
 
-
 # -- replicas
 replicaCount: 1
-
 
 image:
   # -- image registry (could be overwritten by global.image.registry)
@@ -18,22 +16,22 @@ image:
   # -- This sets the pull policy for images. (could be overwritten by global.image.pullPolicy)
   pullPolicy: IfNotPresent
   # -- image tag - Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: ''
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 runner:
   config:
     # -- create a secret by run: forgejo-runner register --no-interactive --token {TOKEN} --name runner --instance https://next.forgejo.org
     create: true
     # -- use existingSecret instatt
-    existingSecret: ""
+    existingSecret: ''
 
     # -- Secret with Environment variables CONFIG_NAME, CONFIG_INSTANCE and CONFIG_TOKEN that should be used on initial runner configuration.
     # If set instance, name, and token are ignored.
-    existingInitSecret: ""
+    existingInitSecret: ''
 
     instance: https://codeberg.org
     name:
@@ -43,14 +41,14 @@ runner:
       log:
         # -- The level of logging, can be trace, debug, info, warn, error, fatal
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        level: "info"
+        level: 'info'
         # -- The level of logging for jobs, can be trace, debug, info, earn, error, fatal
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
         job_level: info
       runner:
         # -- Runner config which contains id and token of this runner (autogenerate with create)
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        file: ".runner"
+        file: '.runner'
         # -- Execute how many tasks concurrently at the same time.
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
         capacity: 1
@@ -91,12 +89,12 @@ runner:
         # -- The directory to store the cache data.
         # If it's empty, the cache data will be stored in $HOME/.cache/actcache.
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        dir: ""
+        dir: ''
         # -- The host of the cache server.
         # It's not for the address to listen, but the address to connect from job containers.
         # So 0.0.0.0 is a bad choice, leave it empty to detect automatically.
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        host: ""
+        host: ''
         # -- The port of the cache server.
         # 0 means to use a random available port.
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
@@ -105,14 +103,14 @@ runner:
         # If it's specified, act_runner will use this URL as the ACTIONS_CACHE_URL rather than start a server by itself.
         # The URL should generally end with "/".
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        external_server: ""
+        external_server: ''
 
       container:
         # -- Specifies the network to which the container will connect.
         # Could be host, bridge or the name of a custom network.
         # If it's empty, create a network automatically.
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        network: ""
+        network: ''
         # -- Whether to create networks with IPv6 enabled. Requires the Docker daemon to be set up accordingly.
         # Only takes effect if "network" is set to "".
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
@@ -143,7 +141,7 @@ runner:
         # If empty, an available docker host will automatically be found and mounted in the job container (e.g. /var/run/docker.sock).
         # Otherwise the specified docker host will be used and an error will be returned if it doesn't work.
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
-        docker_host: "-"
+        docker_host: '-'
         # -- Pull docker image(s) even if already present
         # @section -- Configuration yaml of runner (see: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml)
         force_pull: false
@@ -196,7 +194,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: ''
 
 podAnnotations: {}
 podLabels: {}
@@ -287,4 +285,4 @@ dnsConfig: {}
 extraEnvVars: []
 
 # -- priorityClassName : k8s scheduler priority class name for the runner
-priorityClassName: ""
+priorityClassName: ''

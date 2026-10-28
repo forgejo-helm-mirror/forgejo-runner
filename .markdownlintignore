@@ -1,0 +1,5 @@
+node_modules/
+.helmignore
+Chart.lock
+
+.pnpm-store/
